@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8"> 
+    <title>Clickin Bait GJ 4 </title>
+    <style></style>
+	   <link rel="shortcut icon" href="favicon.ico" >
+   <link rel="icon" type="image/gif" href="animated_favicon1.gif" >
+</head>
+<body class="myElement" oncontextmenu="return false;">
+<canvas id="gameCanvas" width="1600" height="900"></canvas>
+<script type="text/javascript" src="graphics.js"></script>
+<script type="text/javascript" src="umo.js"></script>
+<script type="text/javascript" src="mouse.js"></script>
+<script type="text/javascript" src="keyboard.js"></script>
+
+<script>
+
+
+// declare global variables/////////////////////////////////////////////////
+var mytime = Date.now();
+var FPS = 60;
+setInterval(update, 1000 / FPS);// set up interval (game loop)
+var canvas, context;
+canvas = document.getElementById("gameCanvas"); //canvas is the draw sauce.
+canvas.style.cursor = "crosshair";
+context = canvas.getContext("2d");
+context.canvas.width  = window.innerWidth-24; //This overrides the 1600x900 established in html.
+context.canvas.height = window.innerHeight-24;
+
+var windowmousexoffset = -8;
+var windowmouseyoffset = -8;
+var fullscreenmousexoffset = -12;
+var fullscreenmouseyoffset = -68;
+var mousexoffset = windowmousexoffset;
+var mouseyoffset = windowmouseyoffset;
+
+/* When the openFullscreen() function is executed, open the video in fullscreen.
+Note that we must include prefixes for different browsers, as they don't support the requestFullscreen method yet */
+function openFullscreen() {
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) { /* Safari */
+    canvas.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) { /* IE11 */
+    canvas.msRequestFullscreen();
+  }
+}
+
+var time = 0; //Count of frames elapsed in game time.  Used to track in-game time related stuff.
+var nmeactive = 1; //targeting computer starts off
+var mdx = 0; //I think these were for the mouse?  Not sure if used.
+var mdy = 0;
+var moused = 0;
+var mousedistance = 0;
+var mousestate = 0;
+var myi = 0; //For multiplayer, systems[ps].players[myi] is the user
+var pondx = 32;
+var pondy = 32;
+var pondxsize = canvas.width-64;
+var pondysize = canvas.height-64;
+//var fisherman0 = new Umo(0,0,20,"red");
+//var fisherman1 = new Umo(0,0,20,"orange");
+//var fisherman2 = new Umo(0,0,20,"yellow");
+//var fishermen = [fisherman0,fisherman1,fisherman2];
+var fishermen = [];
+var numfishermen = 6;
+var i=0;
+while(i<numfishermen){
+  var dudeman = new Umo(0,0,8,randcolor());
+  dudeman.name = "fisherdude";
+  var posl = Math.random()*4
+  if (posl<1){
+    dudeman.x = Math.floor(pondxsize*posl+pondx/2);
+    dudeman.y = Math.floor(pondy/2);
+    //dudeman.name = "topguy";
+    }
+  else if (posl<2){
+    posl=posl-1;
+    dudeman.x = Math.floor(pondx/2);
+    dudeman.y = Math.floor(pondysize*posl+pondy/2);
+    //dudeman.name = "leftguy";
+    }
+  else if (posl<3){
+    posl=posl-2;
+    dudeman.x = Math.floor(pondxsize*posl+pondx/2);
+    dudeman.y = Math.floor(pondysize+3*pondy/2);
+    //dudeman.name = "bottomguy";
+    }
+  else if (posl<4){//should always be true
+    posl=posl-3;
+    dudeman.x = Math.floor(pondxsize+3*pondx/2);
+    dudeman.y = Math.floor(pondysize*posl+pondy/2);
+    //dudeman.name = "rightguy";
+    }
+  fishermen.push(dudeman);
+  i++;
+  }
+var fish = [];
+var numfish = 5;
+var i=0;
+while(i<numfish){
+  dudefish = new Umo(0,0,8,randcolor());
+  dudefish.name = "fish"
+  dudefish.x = Math.floor(Math.random()*pondxsize+pondx);
+  dudefish.y = Math.floor(Math.random()*pondysize+pondy);
+  dudefish.vx = Math.random()*4-2;
+  dudefish.vy = Math.random()*4-2;
+  fish.push(dudefish);
+  i++;
+  }
+////////Declarations//////////////////////////////////////////////////////////////////////////////////
+
+
+
+//gameloop
+function update() {
+	var truetime = Date.now();
+  	var servertime = mytime+Math.floor(time*1000/FPS);
+  	if (servertime<truetime){
+	time++;
+    //drawing things
+	context.fillStyle = "green";//Background is black
+	context.fillRect(0, 0, canvas.width, canvas.height); //rectangle the size of the canvas.
+	context.fillStyle = "blue";//Background is black
+	context.fillRect(pondx, pondy, pondxsize, pondysize); //rectangle the size of the canvas.
+	var i=0;
+	while(i<fishermen.length){
+      var dudeman = fishermen[i];
+      dudeman.drawplanet(canvas.width/2,canvas.height/2);
+      //console.log(dudeman.x);
+      i++;
+      }
+    var i=0;
+	while(i<fish.length){
+      var dudefish = fish[i];
+      dudefish.drawplanet(canvas.width/2,canvas.height/2);
+      console.log(dudefish.x);
+      i++;
+      }
+    //collisions and boundaries
+    var i=0;
+    while(i<fish.length){
+      var dudefish = fish[i];
+      if (dudefish.x<pondx){
+        dudefish.x = pondx+1;
+        dudefish.vx = 0.5;//-1*dudefish.vx;
+        }
+      else if (dudefish.x>pondx+pondxsize){
+        dudefish.x = pondx+pondxsize-1;
+        dudefish.vx = -0.5;// -1*dudefish.vx;
+        }
+      if (dudefish.y<pondy){
+        dudefish.y = pondy+1;
+        dudefish.vy = 0.5;//-1*dudefish.vy;
+        }
+      else if (dudefish.y>pondy+pondysize){
+        dudefish.y = pondy+pondysize-1;
+        dudefish.vy = -0.5;// -1*dudefish.vy;
+        }
+      if (dudefish.vx>3){dudefish.vx=3;}
+      else if (dudefish.vx<-3){dudefish.vx=-3;}
+      if (dudefish.vy>3){dudefish.vy=3;}
+      else if (dudefish.vy<-3){dudefish.vy=-3;}
+      dudefish.update1();
+      i++;
+      }
+    //behavior
+    var i=0;
+    while(i<fish.length){
+      dudefish = fish[i];
+      dudefish.vx = dudefish.vx+Math.random()*0.2-0.1;
+      dudefish.vy = dudefish.vy+Math.random()*0.2-0.1;
+      i++;
+      }
+
+
+if(time%2==0){
+    var truetime = Date.now();
+    var servertime = mytime+Math.floor(time*1000/FPS);
+    if (time%(FPS*2)==0){console.log("True time: "+truetime+"Server time: "+servertime+" dt: "+(truetime-servertime));}
+    var lagging = truetime-(servertime+1000/FPS);
+	if (lagging>1000){
+		//console.log("Lagging too far, not correcting "+(truetime-servertime)+" ms");
+		}
+	else if (lagging>0){
+	  update();
+      //console.log("Running extra frame because server is behind "+(truetime-servertime)+" ms");
+      }
+    }
+
+  }else{
+	//console.log("Extra loop skipped because server is ahead "+(servertime-truetime)+"ms");
+	}
+
+}
+
+</script>
